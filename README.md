@@ -62,7 +62,7 @@ docker-compose up -d
 - `/faiss-api`: FAISS with a custom API wrapper
 - `/examples`: Example Python scripts to interact with each containerized database
 - `/monitoring`: Prometheus and Grafana configurations for monitoring
-- `/kubernetes`: Kubernetes manifests for production deployment
+
 
 ## Configuration Options
 
@@ -76,7 +76,7 @@ Each database's Docker Compose file includes common configuration options:
 
 ## Monitoring Setup
 
-The `/monitoring` directory contains a Docker Compose file for deploying Prometheus and Grafana to monitor your vector databases. Dashboards are pre-configured for each database.
+The `/monitoring` directory contains a Docker Compose file for deploying Prometheus and Grafana to monitor your vector databases. 
 
 ## Production Considerations
 
@@ -87,11 +87,3 @@ For production deployments, consider:
 3. Setting up TLS for secure connections
 4. Configuring backups and disaster recovery
 5. Tuning resource allocations based on workload
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This repository is licensed under the MIT License - see the LICENSE file for details.
