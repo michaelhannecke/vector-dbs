@@ -2,6 +2,8 @@
 
 A comprehensive comparison of the top 5 open source vector databases with Python examples, detailed analysis, and use case recommendations.
 
+![Container](docu/container.jpeg)
+
 ## Introduction
 
 In the era of AI and machine learning, vector embeddings have become the fundamental building blocks for how machines understand and process unstructured data. These numerical representations allow computers to grasp the meaning and relationships between text, images, audio, and more. But as organizations generate millions or billions of these vector embeddings, a critical challenge emerges: how do we efficiently store, index, and query them?
