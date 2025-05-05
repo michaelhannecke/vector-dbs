@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   weaviate:
-    image: semitechnologies/weaviate:latest
+    image: semitechnologies/weaviate:1.22.4
     restart: on-failure:0
     ports:
      - "8080:8080"
@@ -10,10 +10,24 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'text2vec-transformers'
-      ENABLE_MODULES: 'text2vec-transformers'
+      ENABLE_MODULES: 'text2vec-transformers,backup-filesystem,img2vec-neural'
       TRANSFORMERS_INFERENCE_API: 'http://t2v-transformers:8080'
+      IMGNEURAL_INFERENCE_API: 'http://img2vec-neural:8080'
+      CLUSTER_HOSTNAME: 'node1'
+      # Uncomment for production use
+      # AUTHENTICATION_APIKEY_ENABLED: 'true'
+      # AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'your-api-key-here'
+      # AUTHENTICATION_APIKEY_USERS: 'user-name'
     volumes:
       - weaviate_data:/var/lib/weaviate
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/meta"]
       interval: 30s
@@ -22,11 +36,17 @@ services:
       start_period: 30s
     depends_on:
       - t2v-transformers
+      - img2vec-neural
 
   t2v-transformers:
     image: semitechnologies/transformers-inference:sentence-transformers-multi-qa-MiniLM-L6-cos-v1
     environment:
       ENABLE_CUDA: '0'  # Set to '1' to enable GPU acceleration
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
       interval: 30s
@@ -34,6 +54,35 @@ services:
       retries: 3
       start_period: 30s
 
+  img2vec-neural:
+    image: semitechnologies/img2vec-neural:resnet50
+    environment:
+      ENABLE_CUDA: '0'  # Set to '1' to enable GPU acceleration
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  backup:
+    image: bash:latest
+    volumes:
+      - backup:/backup
+      - weaviate_data:/data
+    entrypoint: ["tail", "-f", "/dev/null"]
+
 volumes:
   weaviate_data:
     driver: local
+  backup:
+    driver: local
+
+networks:
+  default:
+    name: weaviate-network

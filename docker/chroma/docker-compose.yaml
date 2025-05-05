@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   chroma:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.4.17
     volumes:
       - chroma_data:/chroma/chroma
     ports:
@@ -13,13 +13,43 @@ services:
       - CHROMA_SERVER_HTTP_PORT=8000
       - CHROMA_SERVER_HOST=0.0.0.0
       - ANONYMIZED_TELEMETRY=False
+      - ALLOW_RESET=True  # Set to False in production
+      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=*
+      - CHROMA_SERVER_AUTH_CREDENTIALS_FILE=/chroma/credentials.json
+      - CHROMA_SERVER_AUTH_CREDENTIALS_PROVIDER=chromadb.auth.token.TokenAuthCredentialsProvider
+      - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.token.TokenAuthServerProvider
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
+
+  # Optional Nginx for production deployments
+  # nginx:
+  #   image: nginx:latest
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/certs:/etc/nginx/certs:ro
+  #   ports:
+  #     - "443:443"
+  #   depends_on:
+  #     - chroma
+  #   restart: unless-stopped
 
 volumes:
   chroma_data:
     driver: local
+
+networks:
+  default:
+    name: chroma-network

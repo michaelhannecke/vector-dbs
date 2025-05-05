@@ -1,0 +1,6 @@
+flask==2.3.3
+flask-cors==4.0.0
+faiss-cpu==1.7.4
+numpy==1.24.3
+gunicorn==21.2.0
+python-dotenv==1.0.0
