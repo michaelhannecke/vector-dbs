@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.5.0
     container_name: qdrant
     restart: always
     ports:
@@ -10,11 +10,22 @@ services:
       - "6334:6334"  # GRPC API
     volumes:
       - ./qdrant_storage:/qdrant/storage
-      - ./qdrant_config.yaml:/qdrant/config/production.yaml
+      - ./config/config.yaml:/qdrant/config/production.yaml
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
       - QDRANT__SERVICE__HTTP_PORT=6333
       - QDRANT__STORAGE__STORAGE_PATH=/qdrant/storage
+      - QDRANT__SERVICE__ENABLE_TLS=false
+      # Uncomment for production
+      # - QDRANT__SERVICE__API_KEY=your-api-key-here
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
       interval: 30s
@@ -25,3 +36,7 @@ services:
 volumes:
   qdrant_storage:
     driver: local
+
+networks:
+  default:
+    name: qdrant-network

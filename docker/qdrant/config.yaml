@@ -1,0 +1,46 @@
+storage:
+  # Storage persistence path
+  storage_path: /qdrant/storage
+  # Optimize storage for SSDs (better for most cloud deployments)
+  optimizers:
+    default_segment_number: 2
+    memmap_threshold: 20000
+    vacuum_min_vector_number: 1000
+    max_segment_size_kb: 5242880 # 5GB
+  # Enable WAL for better crash recovery
+  write_ahead_log: true
+  # Performance optimizations
+  performance:
+    max_search_threads: 0 # Auto (equal to num cores)
+  # Update settings
+  update_queue:
+    retry_timeout_sec: 10
+
+service:
+  # REST API port
+  http_port: 6333
+  # gRPC port, used for high-performance data access
+  grpc_port: 6334
+  # API rate limits
+  api_rate_limit:
+    read_per_min: 2000
+    write_per_min: 1000
+  # Max message size for REST API
+  max_request_size_mb: 32
+  # Enable CORS
+  enable_cors: true
+  # Uncomment for production use
+  # api_key: "your-api-key-here"
+
+telemetry:
+  # Disable telemetry if needed
+  enabled: false
+
+cluster:
+  # For single instance
+  enabled: false
+  # Uncomment for multi-node setup
+  # p2p:
+  #   port: 6335
+
+log_level: INFO
