@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  faiss-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - faiss_data:/data/faiss
+    environment:
+      - INDEX_PATH=/data/faiss/index.idx
+      - VECTOR_DIMENSION=384
+      - INDEX_TYPE=Flat
+      - NLIST=100
+      - NPROBE=10
+      - API_TOKEN=your-api-token-change-me
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  faiss_data:
+    driver: local
+
+networks:
+  default:
+    name: faiss-network
