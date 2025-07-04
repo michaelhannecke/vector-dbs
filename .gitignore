@@ -3,6 +3,8 @@
 **/.env
 **/CLAUDE.md
 
+**/__pycache__/*
+
 
 # terraform----
 # Local .terraform directories

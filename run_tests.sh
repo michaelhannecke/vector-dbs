@@ -29,12 +29,22 @@ run_test_suite() {
     echo -e "\n${YELLOW}Running $test_name...${NC}"
     echo "----------------------------------------"
     
-    if pytest $test_args $test_path; then
-        echo -e "${GREEN}✓ $test_name passed${NC}"
-        return 0
+    if [ -n "$test_args" ]; then
+        if pytest $test_path $test_args; then
+            echo -e "${GREEN}✓ $test_name passed${NC}"
+            return 0
+        else
+            echo -e "${RED}✗ $test_name failed${NC}"
+            return 1
+        fi
     else
-        echo -e "${RED}✗ $test_name failed${NC}"
-        return 1
+        if pytest $test_path; then
+            echo -e "${GREEN}✓ $test_name passed${NC}"
+            return 0
+        else
+            echo -e "${RED}✗ $test_name failed${NC}"
+            return 1
+        fi
     fi
 }
 
@@ -42,7 +52,7 @@ run_test_suite() {
 case "${1:-all}" in
     "unit")
         echo "Running unit tests only..."
-        run_test_suite "Unit Tests" "tests/" "-m 'not integration and not docker'"
+        run_test_suite "Unit Tests" "tests/test_docker_compose.py tests/test_examples.py tests/test_faiss_api.py" ""
         ;;
     "docker")
         echo "Running Docker configuration tests..."
