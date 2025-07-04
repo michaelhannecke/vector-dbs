@@ -1,0 +1,17 @@
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+pytest-docker>=2.0.0
+pyyaml>=6.0
+requests>=2.28.0
+docker>=6.0.0
+numpy>=1.21.0
+
+# Optional dependencies for specific tests
+# Uncomment if needed for full testing
+# chromadb>=0.4.0
+# pymilvus>=2.3.0
+# qdrant-client>=1.5.0
+# weaviate-client>=3.24.0
+# faiss-cpu>=1.7.0
+# flask>=2.3.0

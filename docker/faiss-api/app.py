@@ -44,17 +44,29 @@ class IndexStats:
 
 # Initialize or load index
 def init_index():
+    """
+    Initialize FAISS index either by loading existing or creating new.
+    
+    This function handles three scenarios:
+    1. Load existing index from disk if available
+    2. Create new index based on INDEX_TYPE configuration
+    3. Configure index parameters (nprobe for IVF indexes)
+    
+    Returns:
+        bool: True if initialization successful, False otherwise
+    """
     global index
 
     if os.path.exists(INDEX_PATH):
+        # Load existing index from persistent storage
         logger.info(f"Loading index from {INDEX_PATH}")
         try:
             index = faiss.read_index(INDEX_PATH)
             logger.info(f"Loaded index with {index.ntotal} vectors")
 
-            # Set nprobe for IVF indexes
+            # Configure IVF-specific parameters for search performance
             if isinstance(index, faiss.IndexIVF):
-                index.nprobe = NPROBE
+                index.nprobe = NPROBE  # Number of clusters to probe during search
                 logger.info(f"Set nprobe to {NPROBE}")
 
             return True
@@ -62,22 +74,26 @@ def init_index():
             logger.error(f"Error loading index: {e}")
             return False
     else:
+        # Create new index based on configuration
         logger.info(f"Creating new {INDEX_TYPE} index with dimension {DIMENSION}")
         try:
             if INDEX_TYPE == "Flat":
+                # Flat index: exact search, no training required
                 index = faiss.IndexFlatL2(DIMENSION)
             elif INDEX_TYPE == "IVF":
-                quantizer = faiss.IndexFlatL2(DIMENSION)
+                # IVF index: approximate search, requires training
+                quantizer = faiss.IndexFlatL2(DIMENSION)  # Quantizer for clustering
                 index = faiss.IndexIVFFlat(quantizer, DIMENSION, NLIST, faiss.METRIC_L2)
-                # Note: IVF index needs to be trained before use
+                # Note: IVF index needs to be trained before use with training data
             elif INDEX_TYPE == "HNSW":
-                index = faiss.IndexHNSWFlat(DIMENSION, 32)  # 32 is M parameter
+                # HNSW index: graph-based approximate search
+                index = faiss.IndexHNSWFlat(DIMENSION, 32)  # 32 is M parameter (connections per node)
             else:
-                # Default to flat index
+                # Fallback to flat index for unknown types
                 logger.warning(f"Unknown index type {INDEX_TYPE}, defaulting to Flat")
                 index = faiss.IndexFlatL2(DIMENSION)
 
-            # Save the empty index
+            # Persist the empty index to disk for future use
             logger.info(f"Saving initial empty index to {INDEX_PATH}")
             faiss.write_index(index, INDEX_PATH)
             return True
@@ -88,16 +104,30 @@ def init_index():
 
 # Authentication middleware
 def authenticate():
+    """
+    Validate API authentication using Bearer token.
+    
+    Authentication is optional - if no API_TOKEN is configured,
+    all requests are allowed. When configured, expects:
+    Authorization: Bearer <token>
+    
+    Returns:
+        bool: True if authenticated or no auth required, False otherwise
+    """
+    # No authentication required if token not configured
     if API_TOKEN is None:
         return True
 
+    # Extract Authorization header
     auth_header = request.headers.get("Authorization")
     if auth_header:
         try:
+            # Parse "Bearer <token>" format
             token_type, token = auth_header.split()
             if token_type.lower() == "bearer" and token == API_TOKEN:
                 return True
         except ValueError:
+            # Malformed header (not enough parts to split)
             pass
 
     return False
@@ -136,6 +166,18 @@ def stats():
 
 @app.route("/add", methods=["POST"])
 def add_vectors():
+    """
+    Add vectors to the FAISS index.
+    
+    Expected JSON payload:
+    {
+        "vectors": [[...], [...], ...],  # List of vectors (required)
+        "ids": [1, 2, 3, ...]           # Optional: custom IDs for vectors
+    }
+    
+    For IVF indexes, training occurs automatically when enough vectors
+    are available (>= NLIST parameter).
+    """
     if not authenticate():
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -143,7 +185,7 @@ def add_vectors():
         data = request.json
         vectors = np.array(data["vectors"], dtype=np.float32)
 
-        # Check dimensions
+        # Validate vector dimensions match index configuration
         if vectors.shape[1] != DIMENSION:
             return jsonify(
                 {
@@ -151,18 +193,19 @@ def add_vectors():
                 }
             ), 400
 
-        # Train IVF index if needed
+        # Auto-train IVF index when we have enough vectors
         if (
             isinstance(index, faiss.IndexIVF)
             and not index.is_trained
             and vectors.shape[0] >= NLIST
         ):
             logger.info(f"Training IVF index with {vectors.shape[0]} vectors")
-            index.train(vectors)
+            index.train(vectors)  # Train clustering on provided vectors
 
-        # Add vectors
+        # Add vectors with or without custom IDs
         ids = None
         if "ids" in data:
+            # Use custom IDs provided by client
             ids = np.array(data["ids"], dtype=np.int64)
             if len(ids) != vectors.shape[0]:
                 return jsonify(
@@ -173,9 +216,10 @@ def add_vectors():
 
             index.add_with_ids(vectors, ids)
         else:
+            # Auto-generate sequential IDs
             index.add(vectors)
 
-        # Save index after update
+        # Persist updated index to disk
         faiss.write_index(index, INDEX_PATH)
 
         return jsonify(

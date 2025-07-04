@@ -24,13 +24,23 @@ PERSIST_DIRECTORY = "./chroma_db"  # Where to store the database files
 
 
 def connect_to_chroma():
-    """Connect to Chroma DB"""
+    """
+    Connect to Chroma DB with persistent storage.
+    
+    Chroma supports two modes:
+    1. In-memory: Data lost when process ends
+    2. Persistent: Data stored to disk for reuse
+    
+    Returns:
+        chromadb.PersistentClient: Connected client instance
+    """
     print("Setting up Chroma client...")
 
-    # For in-memory database (no persistence)
+    # For in-memory database (no persistence) - data lost on restart
     # client = chromadb.Client()
 
-    # For persistent database
+    # For persistent database - data saved to local directory
+    # This creates the directory if it doesn't exist
     client = chromadb.PersistentClient(path=PERSIST_DIRECTORY)
 
     print("Successfully connected to Chroma!")
@@ -58,7 +68,21 @@ def create_collection(client):
 
 
 def generate_random_embeddings(count, dim=DIMENSION):
-    """Generate random vector embeddings"""
+    """
+    Generate random vector embeddings for testing purposes.
+    
+    In production, embeddings would typically come from:
+    - Text embeddings (using models like sentence-transformers)
+    - Image embeddings (using models like CLIP)
+    - Pre-computed embeddings from ML pipelines
+    
+    Args:
+        count (int): Number of vectors to generate
+        dim (int): Dimension of each vector
+        
+    Returns:
+        list: List of random float vectors
+    """
     return [[random.random() for _ in range(dim)] for _ in range(count)]
 
 
@@ -106,14 +130,29 @@ def insert_vectors(collection, num_vectors=100):
 
 
 def search_by_vector(collection, query_vector, top_k=5, filter_dict=None):
-    """Search for similar vectors with optional filtering"""
+    """
+    Search for similar vectors with optional metadata filtering.
+    
+    Chroma uses cosine similarity by default for vector comparison.
+    The 'where' parameter allows filtering by metadata fields.
+    
+    Args:
+        collection: Chroma collection instance
+        query_vector (list): Vector to search for
+        top_k (int): Number of results to return
+        filter_dict (dict): Optional metadata filter (e.g., {"category": "article"})
+        
+    Returns:
+        dict: Search results with IDs, documents, metadata, and distances
+    """
     print(f"Searching for top {top_k} similar vectors...")
 
+    # Query the collection - Chroma automatically computes similarity
     results = collection.query(
-        query_embeddings=[query_vector],
-        n_results=top_k,
-        where=filter_dict,
-        include=["documents", "metadatas", "distances"],
+        query_embeddings=[query_vector],        # List of query vectors
+        n_results=top_k,                       # Number of results to return
+        where=filter_dict,                     # Metadata filtering
+        include=["documents", "metadatas", "distances"],  # What to include in results
     )
 
     return results

@@ -1,8 +1,8 @@
 # Containerizing Vector Databases: A Docker Guide for Modern AI Infrastructure
 
-This repository contains Docker configurations and examples for deploying the top open source vector databases as containerized applications.
+This repository provides production-ready Docker configurations, example scripts, and comprehensive test suites for deploying the top 5 open source vector databases as containerized applications.
 
-![Containerization  of Vector DBs](/docu/container.jpeg)
+![Containerization of Vector DBs](/docu/container.jpeg)
 
 
 ## Introduction
@@ -15,7 +15,7 @@ In the era of AI applications, vector databases have become crucial infrastructu
 - **Reproducibility**: Share configurations through Docker files for consistent environments
 - **Resource management**: Allocate specific CPU and memory resources to optimize performance
 
-This guide provides ready-to-use Docker configurations for the top 5 open source vector databases: Milvus, Qdrant, Weaviate, Chroma, and FAISS (with a custom API).
+This guide provides ready-to-use Docker configurations for the top 5 open source vector databases: Milvus, Qdrant, Weaviate, Chroma, and FAISS (with a custom REST API wrapper).
 
 ## Vector Databases Included
 
@@ -49,19 +49,47 @@ cd vector-db-docker
 To run a specific database (e.g., Milvus):
 
 ```bash
-cd milvus
+cd docker/milvus
 docker-compose up -d
 ```
 
-## Directory Structure
+Each database runs on a different port to avoid conflicts:
+- **Milvus**: 19530 (gRPC), 9091 (HTTP)
+- **Qdrant**: 6333 (REST), 6334 (gRPC)  
+- **Weaviate**: 8080 (HTTP)
+- **Chroma**: 8000 (HTTP)
+- **FAISS API**: 5000 (HTTP)
 
-- `/milvus`: Milvus Docker configuration
-- `/qdrant`: Qdrant Docker configuration
-- `/weaviate`: Weaviate Docker configuration
-- `/chroma`: Chroma Docker configuration
-- `/faiss-api`: FAISS with a custom API wrapper
-- `/examples`: Example Python scripts to interact with each containerized database
-- `/monitoring`: Prometheus and Grafana configurations for monitoring
+## Repository Structure
+
+```
+vector-dbs/
+├── docker/                          # Docker configurations for each database
+│   ├── milvus/                      # Milvus multi-container setup
+│   ├── qdrant/                      # Qdrant single-container setup  
+│   ├── weaviate/                    # Weaviate with transformer modules
+│   ├── chroma/                      # Chroma with optional NGINX proxy
+│   └── faiss-api/                   # FAISS with custom REST API
+├── examples/                        # Python client examples
+│   ├── chroma_example.py            # Chroma usage with persistence
+│   ├── faiss_example.py             # FAISS local usage patterns
+│   ├── milvus_example.py            # Milvus with schema management
+│   ├── qdrant_example.py            # Qdrant with filtering
+│   ├── weaviate_example.py          # Weaviate GraphQL queries
+│   └── vector_db_benchmark.py       # Performance comparison script
+├── tests/                           # Comprehensive test suite
+│   ├── test_docker_compose.py       # Docker configuration validation
+│   ├── test_faiss_api.py            # FAISS API functionality tests
+│   ├── test_examples.py             # Example script validation
+│   ├── test_integration.py          # End-to-end integration tests
+│   └── conftest.py                  # Test fixtures and configuration
+├── monitoring/                      # Observability stack
+│   ├── docker-compose.yaml          # Prometheus + Grafana setup
+│   └── prometheus/                  # Monitoring configurations
+├── run_tests.sh                     # Test runner script
+├── pytest.ini                      # Test configuration
+└── CLAUDE.md                        # Development guidelines
+```
 
 
 ## Configuration Options
@@ -78,12 +106,67 @@ Each database's Docker Compose file includes common configuration options:
 
 The `/monitoring` directory contains a Docker Compose file for deploying Prometheus and Grafana to monitor your vector databases. 
 
+## Testing and Quality Assurance
+
+This repository includes a comprehensive test suite covering:
+
+### Test Categories
+- **Unit Tests**: Configuration validation and API logic testing
+- **Integration Tests**: End-to-end service deployment verification
+- **Example Tests**: Python script syntax and functionality validation
+- **Docker Tests**: Container build and configuration verification
+
+### Running Tests
+```bash
+# Run all tests
+./run_tests.sh
+
+# Run specific test categories
+./run_tests.sh unit           # Unit tests only
+./run_tests.sh integration    # Integration tests (requires Docker)
+./run_tests.sh coverage      # Generate coverage report
+
+# Run tests with pytest directly
+pytest tests/                 # All tests
+pytest -m "not integration"   # Skip integration tests
+pytest tests/test_faiss_api.py # Specific test file
+```
+
+### Test Requirements
+```bash
+# Install test dependencies
+pip install -r tests/requirements.txt
+```
+
+## Example Usage
+
+Each database includes a complete Python example demonstrating:
+- Connection and authentication
+- Collection/index creation and management
+- Vector insertion with metadata
+- Similarity search with filtering
+- Cleanup and resource management
+
+```bash
+# Run individual examples (requires database to be running)
+python examples/milvus_example.py
+python examples/qdrant_example.py
+python examples/weaviate_example.py
+python examples/chroma_example.py
+python examples/faiss_example.py
+
+# Run performance benchmark across all databases
+python examples/vector_db_benchmark.py
+```
+
 ## Production Considerations
 
 For production deployments, consider:
 
-1. Using Kubernetes for container orchestration
-2. Implementing proper authentication mechanisms
-3. Setting up TLS for secure connections
-4. Configuring backups and disaster recovery
-5. Tuning resource allocations based on workload
+1. **Container Orchestration**: Use Kubernetes for scalability and management
+2. **Security**: Enable authentication, configure TLS, secure API tokens
+3. **Persistence**: Configure proper volume mounts and backup strategies
+4. **Monitoring**: Deploy the included Prometheus/Grafana stack
+5. **Resource Tuning**: Adjust memory/CPU limits based on workload
+6. **High Availability**: Configure clustering for supported databases
+7. **Network Security**: Use proper firewall rules and network segmentation

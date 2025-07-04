@@ -36,31 +36,49 @@ TOP_K = 5  # Number of nearest neighbors to retrieve
 
 
 def connect_to_milvus():
-    """Connect to Milvus server"""
+    """
+    Connect to Milvus server using the default connection.
+    
+    Milvus supports both standalone and cluster deployments.
+    The default port 19530 is used for gRPC communication.
+    """
     print("Connecting to Milvus...")
+    # Create a connection named "default" to the Milvus server
+    # In production, you might want to configure timeouts and other parameters
     connections.connect("default", host="localhost", port="19530")
     print("Successfully connected to Milvus!")
 
 
 def create_collection():
-    """Create a new collection in Milvus"""
+    """
+    Create a new collection in Milvus with proper schema definition.
+    
+    Milvus requires explicit schema definition with:
+    - Primary key field (can be auto-generated or manual)
+    - Vector field with specified dimension
+    - Optional metadata fields
+    """
+    # Clean slate: drop existing collection if it exists
     if utility.has_collection(COLLECTION_NAME):
         utility.drop_collection(COLLECTION_NAME)
         print(f"Dropped existing collection '{COLLECTION_NAME}'")
 
-    # Define fields for the collection
+    # Define the schema fields - Milvus requires explicit schema
     fields = [
+        # Primary key field - must be INT64, can be auto-generated
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=False),
+        # Vector field - FLOAT_VECTOR with specified dimension
         FieldSchema(name=VECTOR_FIELD_NAME, dtype=DataType.FLOAT_VECTOR, dim=DIMENSION),
+        # Metadata field - VARCHAR with max length constraint
         FieldSchema(name="metadata", dtype=DataType.VARCHAR, max_length=256),
     ]
 
-    # Create collection schema
+    # Create collection schema with field definitions
     schema = CollectionSchema(
         fields=fields, description="Example collection for vector search"
     )
 
-    # Create the collection
+    # Create the collection - this is a lightweight operation
     collection = Collection(name=COLLECTION_NAME, schema=schema)
     print(f"Collection '{COLLECTION_NAME}' created successfully!")
 
@@ -68,14 +86,24 @@ def create_collection():
 
 
 def create_index(collection):
-    """Create an index on the vector field"""
+    """
+    Create an index on the vector field for efficient similarity search.
+    
+    Index types in Milvus:
+    - FLAT: Exact search, slow but accurate
+    - IVF_FLAT: Approximate search using inverted file
+    - IVF_SQ8: Compressed version of IVF_FLAT
+    - HNSW: Hierarchical navigable small world graph
+    """
     print("Creating index...")
+    # Index parameters determine search performance and accuracy
     index_params = {
-        "index_type": INDEX_TYPE,
-        "metric_type": METRIC_TYPE,
-        "params": {"nlist": 128},  # Number of clusters for IVF-based indexes
+        "index_type": INDEX_TYPE,           # Type of index algorithm
+        "metric_type": METRIC_TYPE,         # Distance metric (L2, IP, COSINE)
+        "params": {"nlist": 128},          # Number of clusters for IVF-based indexes
     }
 
+    # Create index on the vector field - this can take time for large datasets
     collection.create_index(VECTOR_FIELD_NAME, index_params)
     print(f"Index '{INDEX_TYPE}' created on field '{VECTOR_FIELD_NAME}'")
 
