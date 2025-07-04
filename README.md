@@ -147,16 +147,86 @@ Each database includes a complete Python example demonstrating:
 - Similarity search with filtering
 - Cleanup and resource management
 
+### Setting Up Python Environment
+
+First, install the required Python dependencies:
+
 ```bash
-# Run individual examples (requires database to be running)
-python examples/milvus_example.py
-python examples/qdrant_example.py
-python examples/weaviate_example.py
-python examples/chroma_example.py
-python examples/faiss_example.py
+# Install all vector database client dependencies
+pip install -r requirements.txt
+```
+
+### Running Examples
+
+**Important**: Each example requires the corresponding Docker service to be running first.
+
+#### 1. Start a Vector Database Service
+
+Choose one of the following databases to start:
+
+```bash
+# Start Milvus
+cd docker/milvus && docker-compose up -d
+
+# Start Qdrant
+cd docker/qdrant && docker-compose up -d
+
+# Start Weaviate
+cd docker/weaviate && docker-compose up -d
+
+# Start Chroma
+cd docker/chroma && docker-compose up -d
+
+# Start FAISS API
+cd docker/faiss-api && docker-compose up -d
+```
+
+#### 2. Wait for Service to be Ready
+
+Check that the service is healthy before running examples:
+
+```bash
+# Check service status
+docker-compose ps
+
+# Check service logs
+docker-compose logs -f
+```
+
+#### 3. Run the Corresponding Example
+
+Return to the repository root and run the example:
+
+```bash
+# Run individual examples (requires corresponding database to be running)
+python examples/milvus_example.py     # Requires Milvus running on port 19530
+python examples/qdrant_example.py     # Requires Qdrant running on port 6333
+python examples/weaviate_example.py   # Requires Weaviate running on port 8080
+python examples/chroma_example.py     # Uses local file storage (no service required)
+python examples/faiss_example.py      # Uses local FAISS library (no service required)
 
 # Run performance benchmark across all databases
 python examples/vector_db_benchmark.py
+```
+
+#### 4. Service-Specific Notes
+
+- **Chroma**: The example uses local file storage by default. To use the Docker service, modify the connection in `examples/chroma_example.py` to connect to `http://localhost:8000`
+- **FAISS**: The example uses the local FAISS library. For the REST API version, use the endpoint `http://localhost:5000`
+- **Milvus**: Requires the most time to start due to multiple dependencies (etcd, MinIO)
+- **Qdrant, Weaviate**: Usually ready within 30-60 seconds
+
+#### 5. Stopping Services
+
+When finished with examples:
+
+```bash
+# Stop a specific service
+cd docker/{database-name}
+docker-compose down
+
+# Stop all services and remove volumes (data will be lost)
+docker-compose down -v
 ```
 
 ## Production Considerations

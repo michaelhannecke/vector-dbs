@@ -27,19 +27,23 @@ def connect_to_chroma():
     """
     Connect to Chroma DB with persistent storage.
     
-    Chroma supports two modes:
+    Chroma supports multiple modes:
     1. In-memory: Data lost when process ends
     2. Persistent: Data stored to disk for reuse
+    3. HTTP Client: Connect to Chroma server (Docker service)
     
     Returns:
-        chromadb.PersistentClient: Connected client instance
+        chromadb.Client: Connected client instance
     """
     print("Setting up Chroma client...")
 
-    # For in-memory database (no persistence) - data lost on restart
+    # Option 1: Connect to Docker service (uncomment to use)
+    # client = chromadb.HttpClient(host="localhost", port=8000)
+
+    # Option 2: For in-memory database (no persistence) - data lost on restart
     # client = chromadb.Client()
 
-    # For persistent database - data saved to local directory
+    # Option 3: For persistent database - data saved to local directory
     # This creates the directory if it doesn't exist
     client = chromadb.PersistentClient(path=PERSIST_DIRECTORY)
 
